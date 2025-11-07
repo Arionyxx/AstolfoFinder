@@ -1,0 +1,8 @@
+node_modules
+dist
+build
+.git
+.husky
+*.lock
+*.log
+.DS_Store
