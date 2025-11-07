@@ -6,6 +6,7 @@ import prisma from './lib/prisma.js';
 import authRoutes from './routes/auth.routes.js';
 import profileRoutes from './routes/profile.routes.js';
 import discoveryRoutes from './routes/discovery.routes.js';
+import swipeRoutes from './routes/swipe.routes.js';
 import { extractUser, errorHandler } from './middleware/auth.middleware.js';
 
 dotenv.config();
@@ -33,9 +34,14 @@ app.use('/api', profileRoutes);
 // Discovery routes
 app.use('/api/discovery', discoveryRoutes);
 
+// Swipe and match routes
+app.use('/api', swipeRoutes);
+
 // Error handler
 app.use(errorHandler);
 
 app.listen(port, (): void => {
   console.log(`Server is running on port ${port}`);
 });
+
+export default app;

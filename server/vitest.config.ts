@@ -15,7 +15,7 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     env: {
       NODE_ENV: 'test',
-      DATABASE_URL: 'file:./test.db',
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/monorepo_test',
       JWT_SECRET: 'test-secret-key',
       JWT_REFRESH_SECRET: 'test-refresh-secret-key',
     },
