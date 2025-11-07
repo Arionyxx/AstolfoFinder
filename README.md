@@ -92,12 +92,22 @@ cp client/.env.example client/.env
 createdb monorepo_db
 ```
 
-2. Run Prisma migrations:
+2. Generate Prisma Client:
 ```bash
-yarn workspace @monorepo/server run migrate
+yarn workspace @monorepo/server run prisma:generate
 ```
 
-This will create the database schema based on `prisma/schema.prisma`.
+3. Run initial migration:
+```bash
+yarn workspace @monorepo/server run migrate --name init
+```
+
+4. Seed the database with default hobbies:
+```bash
+yarn workspace @monorepo/server run db:seed
+```
+
+This will create the database schema based on `prisma/schema.prisma` and populate it with default hobbies and interests.
 
 ### Development
 
@@ -215,16 +225,26 @@ const response = await fetch('http://localhost:5000/health');
 
 ### Database Models
 
-Models are defined in `server/prisma/schema.prisma`. Example:
-```prisma
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-```
+The application includes comprehensive data models for a dating/matching app:
+
+**Core Models:**
+- **User**: Authentication credentials, email verification, password reset
+- **Profile**: User profile information (display name, age, gender, bio, location coordinates, radius preferences)
+- **Hobby**: Pre-defined hobbies and interests (seeded with 60+ options)
+- **ProfileHobby**: Many-to-many relationship between profiles and hobbies
+- **Swipe**: User swipe actions (like/pass) with timestamps and date fields
+- **Match**: Match records between two users with creation and interaction timestamps
+- **ProfilePhoto**: User profile photos with primary photo support
+
+**Key Features:**
+- Email verification and password reset functionality
+- Location-based matching with customizable radius preferences  
+- Comprehensive hobby/interest system with categories
+- Swipe tracking with both timestamp and date-only fields for flexible querying
+- Match system with interaction tracking
+- Cascade deletes for data integrity
+
+Models are defined in `server/prisma/schema.prisma`.
 
 ### API Endpoints
 
@@ -270,8 +290,7 @@ git commit --no-verify
 ### Create a migration
 
 ```bash
-yarn workspace @monorepo/server run migrate
-# Follow prompts to name your migration
+yarn workspace @monorepo/server run migrate --name <migration-name>
 ```
 
 ### Deploy migrations
@@ -280,10 +299,29 @@ yarn workspace @monorepo/server run migrate
 yarn workspace @monorepo/server run migrate:deploy
 ```
 
+### Reset Database
+
+```bash
+yarn workspace @monorepo/server run migrate:reset
+```
+
 ### Generate Prisma Client
 
 ```bash
 yarn workspace @monorepo/server run prisma:generate
+```
+
+### Seed Database
+
+```bash
+yarn workspace @monorepo/server run db:seed
+```
+
+### Database GUI
+
+View and edit your database with Prisma Studio:
+```bash
+yarn workspace @monorepo/server run prisma studio
 ```
 
 ## 📦 Adding Dependencies
