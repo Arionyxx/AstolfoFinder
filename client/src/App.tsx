@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
+import Profile from './pages/Profile';
+import ProfileDemo from './pages/ProfileDemo';
 
 export default function App(): JSX.Element {
   return (
@@ -18,6 +20,18 @@ export default function App(): JSX.Element {
                 >
                   Home
                 </Link>
+                <Link
+                  to="/profile"
+                  className="text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  Profile
+                </Link>
+                <Link
+                  to="/demo"
+                  className="text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  Demo
+                </Link>
               </div>
             </div>
           </div>
@@ -26,6 +40,8 @@ export default function App(): JSX.Element {
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/demo" element={<ProfileDemo />} />
           </Routes>
         </main>
       </div>
