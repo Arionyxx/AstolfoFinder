@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import prisma from './lib/prisma.js';
 import authRoutes from './routes/auth.routes.js';
 import profileRoutes from './routes/profile.routes.js';
+import discoveryRoutes from './routes/discovery.routes.js';
 import { extractUser, errorHandler } from './middleware/auth.middleware.js';
 
 dotenv.config();
@@ -28,6 +29,9 @@ app.use('/api/auth', authRoutes);
 
 // Profile routes
 app.use('/api', profileRoutes);
+
+// Discovery routes
+app.use('/api/discovery', discoveryRoutes);
 
 // Error handler
 app.use(errorHandler);
