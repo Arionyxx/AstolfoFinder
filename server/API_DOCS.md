@@ -569,9 +569,370 @@ The `req.user` object contains:
 
 ---
 
+## Swipe and Match Endpoints
+
+### 7. Record Swipe
+
+Record a like or pass action on another user.
+
+```yaml
+POST /api/swipes
+Content-Type: application/json
+Cookie: accessToken=eyJhbGc...
+Authorization: Bearer (implicit via cookie)
+
+Request Body:
+  targetId:
+    type: string
+    required: true
+    description: ID of the user being swiped on
+    example: "cuid_target_123456"
+  direction:
+    type: string
+    enum: ["like", "pass"]
+    required: true
+    example: "like"
+
+Responses:
+  201:
+    description: Swipe recorded successfully
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            swipe:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                swipeId:
+                  type: string
+                  example: "cuid_swipe_123456"
+                matchCreated:
+                  type: boolean
+                  description: true if mutual like created a match
+                  example: false
+                message:
+                  type: string
+                  example: "Swiped like"
+
+  400:
+    description: Validation error or invalid request
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Invalid input"
+
+  401:
+    description: Not authenticated
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Unauthorized"
+
+  409:
+    description: Already swiped on this user
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "You have already swiped on this user"
+
+  429:
+    description: Daily swipe limit reached (100 per UTC day)
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Daily swipe limit of 100 reached. Limit resets at midnight UTC."
+            retryAfter:
+              type: string
+              example: "midnight UTC"
+```
+
+---
+
+### 8. Get Swipe Statistics
+
+Get current swipe count and remaining swipes for today.
+
+```yaml
+GET /api/swipes/status
+Cookie: accessToken=eyJhbGc...
+Authorization: Bearer (implicit via cookie)
+
+Responses:
+  200:
+    description: Swipe statistics retrieved
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            stats:
+              type: object
+              properties:
+                totalSwipesToday:
+                  type: integer
+                  example: 25
+                swipesRemaining:
+                  type: integer
+                  example: 75
+                resetTime:
+                  type: string
+                  format: date-time
+                  description: UTC time when daily limit resets
+                  example: "2024-01-16T00:00:00.000Z"
+
+  401:
+    description: Not authenticated
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Unauthorized"
+```
+
+---
+
+### 9. Get All Matches
+
+Get list of all matches for the current user.
+
+```yaml
+GET /api/matches
+Cookie: accessToken=eyJhbGc...
+Authorization: Bearer (implicit via cookie)
+
+Responses:
+  200:
+    description: List of matches
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            matches:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "cuid_match_123456"
+                  matchedWithId:
+                    type: string
+                    example: "cuid_user_789012"
+                  matchedWithName:
+                    type: string
+                    nullable: true
+                    example: "Jane Smith"
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: "2024-01-15T14:30:00.000Z"
+                  lastInteraction:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    example: "2024-01-15T15:45:00.000Z"
+            total:
+              type: integer
+              example: 3
+
+  401:
+    description: Not authenticated
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Unauthorized"
+```
+
+---
+
+### 10. Get Match Details
+
+Get detailed information about a specific match.
+
+```yaml
+GET /api/matches/{matchId}
+Cookie: accessToken=eyJhbGc...
+Authorization: Bearer (implicit via cookie)
+
+Path Parameters:
+  matchId:
+    type: string
+    required: true
+    example: "cuid_match_123456"
+
+Responses:
+  200:
+    description: Match details
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            match:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: "cuid_match_123456"
+                matchedWith:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "cuid_user_789012"
+                    displayName:
+                      type: string
+                      nullable: true
+                      example: "Jane Smith"
+                    age:
+                      type: integer
+                      nullable: true
+                      example: 26
+                    gender:
+                      type: string
+                      nullable: true
+                      example: "female"
+                    bio:
+                      type: string
+                      nullable: true
+                      example: "Love traveling and photography"
+                    primaryPhoto:
+                      type: string
+                      nullable: true
+                      format: uri
+                      example: "https://example.com/photo.jpg"
+                createdAt:
+                  type: string
+                  format: date-time
+                  example: "2024-01-15T14:30:00.000Z"
+                lastInteraction:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  example: "2024-01-15T15:45:00.000Z"
+
+  401:
+    description: Not authenticated
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Unauthorized"
+
+  403:
+    description: User is not part of this match
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Unauthorized to view this match"
+
+  404:
+    description: Match not found
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Match not found"
+```
+
+---
+
+## Swipe and Match Flow
+
+### Daily Swipe Limit
+
+- **Limit**: 100 swipes per UTC day (00:00 UTC to 23:59:59 UTC)
+- **Reset**: Automatically resets at midnight UTC
+- **Tracking**: Uses `swipeDate` field in Swipe model
+- **Status**: Check remaining swipes via `GET /api/swipes/status`
+
+### Mutual Like and Match Creation
+
+1. User A swipes "like" on User B
+2. If User B has already swiped "like" on User A:
+   - A Match record is created automatically
+   - Both users are notified (placeholder for notification system)
+3. If User B hasn't swiped yet:
+   - Swipe is recorded and saved
+   - Match is not created yet
+3. If User B swipes "like" later:
+   - The system detects the mutual like
+   - A Match is created automatically
+
+### Swipe States
+
+- **Like**: Positive interest in a user. Can lead to Match creation if mutual.
+- **Pass**: No interest. Prevents future swipes on this user.
+- **Mutual Like**: Both users have swiped "like" on each other, resulting in a Match.
+
+### Example Scenarios
+
+**Scenario 1: One-way like**
+```
+User A swipes "like" on User B
+→ Swipe recorded with matchCreated=false
+→ No match created until User B also likes User A
+```
+
+**Scenario 2: Mutual like (A first)**
+```
+User B swipes "like" on User A (first)
+User A swipes "like" on User B (second)
+→ Swipe recorded with matchCreated=true
+→ Match created automatically
+→ Both users are notified
+```
+
+**Scenario 3: Pass**
+```
+User A swipes "pass" on User B
+→ Swipe recorded
+→ No match created regardless of User B's action
+```
+
+---
+
 ## Support
 
-For issues or questions about the auth API:
+For issues or questions about the swipe and match API:
 1. Check the test files for usage examples
 2. Review the README.md for additional documentation
 3. Check server logs for detailed error messages
