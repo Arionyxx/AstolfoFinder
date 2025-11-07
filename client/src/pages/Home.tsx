@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HealthStatus {
   status: string;
@@ -6,6 +7,7 @@ interface HealthStatus {
 }
 
 export default function Home(): JSX.Element {
+  const { user } = useAuth();
   const [status, setStatus] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +34,16 @@ export default function Home(): JSX.Element {
   return (
     <div className="grid grid-cols-1 gap-8 py-12">
       <div className="bg-white shadow-md rounded-lg p-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          Welcome to Full-Stack Monorepo
-        </h2>
+        <div className="mb-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome to Full-Stack Monorepo
+          </h2>
+          {user && (
+            <p className="text-gray-600 text-lg">
+              Logged in as <span className="font-medium">{user.email}</span>
+            </p>
+          )}
+        </div>
         <p className="text-gray-600 text-lg mb-6">
           This is a scaffolded full-stack application with Node.js backend and React frontend.
         </p>

@@ -41,6 +41,8 @@ The dev server includes:
 - `yarn dev` - Start development server
 - `yarn build` - Build for production
 - `yarn preview` - Preview production build locally
+- `yarn test` - Run tests once
+- `yarn test:watch` - Run tests in watch mode
 - `yarn lint` - Check code with ESLint
 - `yarn lint:fix` - Fix linting issues
 - `yarn type-check` - Run TypeScript compiler
@@ -53,17 +55,37 @@ client/
 │   ├── App.tsx            # Main App component with routing
 │   ├── main.tsx           # React entry point
 │   ├── index.css          # Global styles (Tailwind)
-│   └── pages/
-│       ├── Home.tsx       # Home page
-│       └── ...            # Add more pages
+│   ├── contexts/
+│   │   └── AuthContext.tsx # Auth state management
+│   ├── components/
+│   │   ├── ProtectedRoute.tsx # Route guard for auth
+│   │   └── ui/            # Reusable UI components
+│   │       ├── Button.tsx
+│   │       ├── Input.tsx
+│   │       └── FormError.tsx
+│   ├── pages/
+│   │   ├── Landing.tsx    # Landing/welcome page
+│   │   ├── Register.tsx   # Registration page
+│   │   ├── Login.tsx      # Login page
+│   │   └── Home.tsx       # Home page (protected)
+│   ├── lib/
+│   │   └── api.ts         # API client and auth endpoints
+│   ├── schemas/
+│   │   └── auth.ts        # Zod validation schemas
+│   └── __tests__/         # Test files
+│       ├── setup.ts
+│       ├── Register.test.tsx
+│       └── Login.test.tsx
 ├── index.html             # HTML template
 ├── vite.config.ts         # Vite configuration
+├── vitest.config.ts       # Vitest test configuration
 ├── tailwind.config.js     # TailwindCSS configuration
 ├── postcss.config.js      # PostCSS configuration
 ├── tsconfig.json          # TypeScript configuration
 ├── .eslintrc.json         # ESLint configuration
 ├── .prettierrc.json       # Prettier configuration
 ├── .env.example           # Environment variables template
+├── AUTH_FLOW.md           # Authentication flow documentation
 └── package.json           # Dependencies and scripts
 ```
 
@@ -86,6 +108,65 @@ Global styles are in `src/index.css`. TailwindCSS directives are:
 - `@tailwind base` - Base styles
 - `@tailwind components` - Component classes
 - `@tailwind utilities` - Utility classes
+
+## 🔐 Authentication
+
+This application includes a complete authentication system with:
+
+- **User Registration**: Email + password with validation
+- **Login**: Secure authentication with JWT tokens
+- **Protected Routes**: Routes that require authentication
+- **Session Management**: Automatic token refresh
+- **Logout**: Clean session termination
+
+### Auth Features
+
+- **Form Validation**: React Hook Form + Zod schemas
+- **Secure Tokens**: HTTP-only cookies (managed by backend)
+- **Error Handling**: User-friendly error messages
+- **Loading States**: Visual feedback during operations
+- **Mobile-Friendly**: Responsive design for all devices
+
+For detailed authentication documentation, see [AUTH_FLOW.md](./AUTH_FLOW.md).
+
+### Using Protected Routes
+
+Wrap any route that requires authentication:
+
+```tsx
+import ProtectedRoute from './components/ProtectedRoute';
+
+<Route
+  path="/dashboard"
+  element={
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  }
+/>
+```
+
+### Using Auth Context
+
+Access auth state in any component:
+
+```tsx
+import { useAuth } from './contexts/AuthContext';
+
+function MyComponent() {
+  const { user, loading, logout } = useAuth();
+
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <div>Not logged in</div>;
+
+  return (
+    <div>
+      <p>Welcome, {user.email}!</p>
+      <button onClick={logout}>Logout</button>
+    </div>
+  );
+}
+```
 
 ## 🔄 Routing
 
@@ -163,6 +244,54 @@ axios.get('http://localhost:5000/api/endpoint')
   .then(response => console.log(response.data))
   .catch(error => console.error(error));
 ```
+
+## 🧪 Testing
+
+### Test Framework
+
+- **Vitest**: Fast unit test framework
+- **Testing Library**: React component testing
+- **User Event**: Simulate user interactions
+
+### Running Tests
+
+```bash
+# Run all tests once
+yarn test
+
+# Run tests in watch mode
+yarn test:watch
+```
+
+### Test Structure
+
+Tests are located in `src/__tests__/`:
+
+```tsx
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+describe('MyComponent', () => {
+  it('renders correctly', () => {
+    render(<MyComponent />);
+    expect(screen.getByText('Hello')).toBeInTheDocument();
+  });
+
+  it('handles user interaction', async () => {
+    const user = userEvent.setup();
+    render(<MyComponent />);
+    
+    await user.click(screen.getByRole('button'));
+    expect(screen.getByText('Clicked')).toBeInTheDocument();
+  });
+});
+```
+
+### Current Test Coverage
+
+- **Register Component**: Form validation, submission, error handling
+- **Login Component**: Form validation, authentication, error handling
 
 ## 📝 Code Style
 
