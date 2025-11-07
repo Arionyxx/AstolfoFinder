@@ -10,11 +10,118 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Example model - remove or modify as needed
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  emailVerified     Boolean   @default(false)
+  emailVerifiedAt   DateTime?
+  verificationToken String?   @unique
+  resetToken        String?   @unique
+  resetTokenExpires DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  profile   Profile?
+  swipesAsActor Swipe[]  @relation("SwipeActor")
+  swipesAsTarget Swipe[]  @relation("SwipeTarget")
+  matchesAsUser1 Match[]  @relation("MatchUser1")
+  matchesAsUser2 Match[]  @relation("MatchUser2")
+
+  @@map("users")
+}
+
+model Profile {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  displayName String?
+  age         Int?
+  gender      String?
+  pronouns    String?
+  bio         String?
+  status      String?   @default("active")
+  locationLat Float?    // Latitude
+  locationLng Float?    // Longitude
+  radiusPref  Int?      @default(25) // Radius preference in miles/km
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hobbies     ProfileHobby[]
+  photos      ProfilePhoto[]
+
+  @@map("profiles")
+}
+
+model Hobby {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  category    String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  profiles ProfileHobby[]
+
+  @@map("hobbies")
+}
+
+model ProfileHobby {
+  id        String   @id @default(cuid())
+  profileId String
+  hobbyId   String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  // Relations
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  hobby   Hobby   @relation(fields: [hobbyId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, hobbyId])
+  @@map("profile_hobbies")
+}
+
+model Swipe {
+  id         String   @id @default(cuid())
+  actorId    String   // User who performed the swipe
+  targetId   String   // User who was swiped on
+  direction  String   // "like" or "pass"
+  timestamp  DateTime @default(now())
+  swipeDate  DateTime @default(now()) // Date component for easier querying
+
+  // Relations
+  actor  User  @relation("SwipeActor", fields: [actorId], references: [id], onDelete: Cascade)
+  target User  @relation("SwipeTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([actorId, targetId]) // A user can only swipe on another user once
+  @@map("swipes")
+}
+
+model Match {
+  id                String    @id @default(cuid())
+  user1Id           String
+  user2Id           String
+  createdAt         DateTime  @default(now())
+  lastInteraction   DateTime?
+  
+  // Relations
+  user1 User @relation("MatchUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2 User @relation("MatchUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  @@unique([user1Id, user2Id])
+  @@map("matches")
+}
+
+model ProfilePhoto {
+  id        String   @id @default(cuid())
+  profileId String
+  url       String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("profile_photos")
 }
