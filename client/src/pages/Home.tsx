@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DiscoveryCard from '../components/DiscoveryCard';
 import {
@@ -53,6 +55,9 @@ const createSwipeLogger = (direction: SwipeDirection, name?: string | null): Fee
 };
 
 export default function Home(): JSX.Element {
+  const { user } = useAuth();
+  const [status, setStatus] = useState<HealthStatus | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [profiles, setProfiles] = useState<DiscoveryProfile[]>([]);
   const [stats, setStats] = useState<SwipeStats | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -275,6 +280,45 @@ export default function Home(): JSX.Element {
   }, [handleSwipe]);
 
   return (
+    <div className="grid grid-cols-1 gap-8 py-12">
+      <div className="bg-white shadow-md rounded-lg p-8">
+        <div className="mb-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome to Full-Stack Monorepo
+          </h2>
+          {user && (
+            <p className="text-gray-600 text-lg">
+              Logged in as <span className="font-medium">{user.email}</span>
+            </p>
+          )}
+        </div>
+        <p className="text-gray-600 text-lg mb-6">
+          This is a scaffolded full-stack application with Node.js backend and React frontend.
+        </p>
+
+        <div className="border-t pt-6">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">
+            Server Health Check
+          </h3>
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin h-5 w-5 bg-blue-500 rounded-full" />
+              <p className="text-gray-600">Checking server health...</p>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-red-800">{error}</p>
+            </div>
+          ) : status ? (
+            <div className="bg-green-50 border border-green-200 rounded-md p-4">
+              <p className="text-green-800 font-medium">
+                ✓ Server is {status.status}
+              </p>
+              <p className="text-sm text-green-700 mt-2">
+                Last checked: {new Date(status.timestamp).toLocaleTimeString()}
+              </p>
+            </div>
+          ) : null}
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 pb-12">
       {matchToast ? (
         <div className="fixed inset-x-0 top-4 z-20 flex justify-center px-4 sm:justify-end sm:px-6">
