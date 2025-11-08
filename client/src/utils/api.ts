@@ -161,6 +161,70 @@ export const swipeApi = {
     }),
 };
 
+export interface MatchSummary {
+  id: string;
+  matchedWithId: string;
+  matchedWithName: string | null;
+  createdAt: string;
+  lastInteraction: string | null;
+}
+
+export interface MatchListResponse {
+  matches: MatchSummary[];
+  total: number;
+}
+
+export interface MatchDetailProfile {
+  id: string;
+  displayName: string | null;
+  age: number | null;
+  gender: string | null;
+  bio: string | null;
+  primaryPhoto: string | null;
+}
+
+export interface MatchDetailResponse {
+  match: {
+    id: string;
+    matchedWith: MatchDetailProfile;
+    createdAt: string;
+    lastInteraction: string | null;
+  };
+}
+
+export interface MatchMessageItem {
+  id: string;
+  matchId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface MatchMessagesResponse {
+  messages: MatchMessageItem[];
+}
+
+export interface MatchMessageResponse {
+  message: MatchMessageItem;
+}
+
+export interface MatchMessagePayload {
+  content: string;
+}
+
+export const matchesApi = {
+  list: (): Promise<MatchListResponse> => apiRequest('/matches'),
+  getDetails: (matchId: string): Promise<MatchDetailResponse> =>
+    apiRequest(`/matches/${matchId}`),
+  getMessages: (matchId: string): Promise<MatchMessagesResponse> =>
+    apiRequest(`/matches/${matchId}/messages`),
+  sendMessage: (matchId: string, payload: MatchMessagePayload): Promise<MatchMessageResponse> =>
+    apiRequest(`/matches/${matchId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+};
+
 // Profile API functions
 export const profileApi = {
   getProfile: () => apiRequest('/profile'),

@@ -59,6 +59,7 @@ export default function Home(): JSX.Element {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const [matchToast, setMatchToast] = useState<string | null>(null);
   const [limitReached, setLimitReached] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isProcessingSwipe, setIsProcessingSwipe] = useState(false);
@@ -69,6 +70,18 @@ export default function Home(): JSX.Element {
   useEffect(() => {
     currentProfileRef.current = profiles[0] ?? null;
   }, [profiles]);
+
+  useEffect(() => {
+    if (!matchToast) return;
+
+    const timer = window.setTimeout(() => {
+      setMatchToast(null);
+    }, 4000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [matchToast]);
 
   const applyStats = useCallback((statusResponse: SwipeStatusResponse): void => {
     setStats(statusResponse.stats);
@@ -191,10 +204,12 @@ export default function Home(): JSX.Element {
         const response = await swipeApi.recordSwipe(currentProfile.userId, direction);
 
         if (response.swipe.matchCreated) {
+          const toastMessage = response.swipe.message || "It's a match!";
           setFeedback({
             type: 'success',
-            text: response.swipe.message || "It's a match!",
+            text: toastMessage,
           });
+          setMatchToast(toastMessage);
         } else if (response.swipe.message) {
           setFeedback({
             type: direction === 'like' ? 'success' : 'info',
@@ -247,6 +262,10 @@ export default function Home(): JSX.Element {
     void loadInitial();
   }, [loadInitial]);
 
+  const dismissMatchToast = useCallback(() => {
+    setMatchToast(null);
+  }, []);
+
   const handlePass = useCallback(() => {
     void handleSwipe('pass');
   }, [handleSwipe]);
@@ -257,6 +276,25 @@ export default function Home(): JSX.Element {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 pb-12">
+      {matchToast ? (
+        <div className="fixed inset-x-0 top-4 z-20 flex justify-center px-4 sm:justify-end sm:px-6">
+          <div
+            className="relative w-full max-w-sm rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-lg"
+            role="status"
+            aria-live="polite"
+          >
+            <p className="pr-8 text-sm font-semibold text-emerald-700">{matchToast}</p>
+            <button
+              type="button"
+              onClick={dismissMatchToast}
+              className="absolute right-2 top-2 rounded-full p-1 text-emerald-600 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+              aria-label="Dismiss match notification"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      ) : null}
       <header className="rounded-2xl border border-gray-200 bg-white px-6 py-5 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>

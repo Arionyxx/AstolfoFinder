@@ -7,6 +7,7 @@ describe('SwipeService', () => {
   let targetUserId: string;
 
   beforeEach(async () => {
+    SwipeService.clearMessageStore();
     // Create test users
     const testUser = await prisma.user.create({
       data: {
@@ -382,7 +383,73 @@ describe('SwipeService', () => {
     });
   });
 
+  describe('match messaging placeholder', () => {
+    let matchId: string;
+
+    beforeEach(async () => {
+      const match = await prisma.match.create({
+        data: {
+          user1Id: testUserId,
+          user2Id: targetUserId,
+        },
+      });
+
+      matchId = match.id;
+    });
+
+    it('returns empty array when no messages exist', async () => {
+      const messages = await SwipeService.getMatchMessages(matchId, testUserId);
+      expect(messages).toEqual([]);
+    });
+
+    it('adds and retrieves trimmed messages for both participants', async () => {
+      const stored = await SwipeService.addMatchMessage(matchId, testUserId, ' Hello there ');
+
+      expect(stored.content).toBe('Hello there');
+      expect(stored.matchId).toBe(matchId);
+      expect(stored.senderId).toBe(testUserId);
+      expect(new Date(stored.createdAt).toISOString()).toBe(stored.createdAt);
+
+      const messagesForSelf = await SwipeService.getMatchMessages(matchId, testUserId);
+      expect(messagesForSelf).toHaveLength(1);
+      expect(messagesForSelf[0].content).toBe('Hello there');
+
+      const messagesForPartner = await SwipeService.getMatchMessages(matchId, targetUserId);
+      expect(messagesForPartner).toHaveLength(1);
+      expect(messagesForPartner[0].content).toBe('Hello there');
+      expect(messagesForPartner[0].id).toBe(stored.id);
+
+      const refreshedMatch = await prisma.match.findUnique({ where: { id: matchId } });
+      expect(refreshedMatch?.lastInteraction).not.toBeNull();
+    });
+
+    it('prevents users outside the match from accessing messages', async () => {
+      const outsider = await prisma.user.create({
+        data: {
+          email: 'test-swipe-service-outsider@example.com',
+          passwordHash: 'test',
+          emailVerified: true,
+        },
+      });
+
+      await expect(SwipeService.getMatchMessages(matchId, outsider.id)).rejects.toThrow('Unauthorized');
+      await expect(SwipeService.addMatchMessage(matchId, outsider.id, 'Hi there')).rejects.toThrow('Unauthorized');
+    });
+
+    it('enforces message content constraints', async () => {
+      await expect(SwipeService.addMatchMessage(matchId, testUserId, '  ')).rejects.toThrow(
+        'Message content cannot be empty'
+      );
+
+      const longMessage = 'a'.repeat(1001);
+      await expect(SwipeService.addMatchMessage(matchId, testUserId, longMessage)).rejects.toThrow(
+        'Message content must be 1000 characters or less'
+      );
+    });
+  });
+
   afterEach(async () => {
+    SwipeService.clearMessageStore();
     // Clean up test data
     await prisma.swipe.deleteMany({
       where: {
