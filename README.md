@@ -85,6 +85,70 @@ cp client/.env.example client/.env
 # Edit client/.env if needed
 ```
 
+## 🐳 Docker Setup
+
+Docker support is available for local development and production-like builds.
+
+### Key files
+- `server/Dockerfile` – multi-stage build for the Express API
+- `client/Dockerfile` – builds the React app and serves it with nginx
+- `docker-compose.yml` – orchestrates PostgreSQL, backend, and frontend containers
+- `docker-compose.override.yml` – enables hot reload and interactive logging during development
+
+### Quick start
+
+```bash
+docker-compose up --build
+```
+
+Running `docker-compose up` in this directory automatically applies the override file, so the backend runs with `ts-node-dev` and the frontend runs with the Vite dev server for hot reload. The services become available at:
+
+- Backend API: http://localhost:3001
+- Frontend UI: http://localhost:3000
+- PostgreSQL: localhost:5432 (`postgres` / `postgres`)
+
+To run the stack in the background use `docker-compose up -d`, and stop everything with:
+
+```bash
+docker-compose down
+```
+
+### Useful commands
+
+- Tail logs for a service (e.g. backend):
+  ```bash
+  docker-compose logs -f backend
+  ```
+- Rebuild images after dependency changes:
+  ```bash
+  docker-compose build
+  ```
+- Reset the database by removing the bound volume:
+  ```bash
+  docker-compose down -v
+  ```
+- Run Prisma reset inside the backend container (drops and recreates schema):
+  ```bash
+  docker-compose exec backend npx prisma migrate reset --force
+  ```
+
+### Production-style build
+
+To emulate the production configuration without the development overrides:
+
+```bash
+docker-compose -f docker-compose.yml up --build
+```
+
+This uses the compiled backend and the nginx-served frontend without mounting local volumes.
+
+### Environment variables
+
+- Backend container: `DATABASE_URL=postgresql://postgres:postgres@postgres:5432/monorepo`
+- Frontend build: `VITE_API_URL=http://backend:3001`
+
+You can override these values in a `.env` file or directly in the compose files if needed.
+
 ### Database Setup (Backend)
 
 1. Create a PostgreSQL database:
