@@ -6,6 +6,9 @@ import Landing from './pages/Landing';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Home from './pages/Home';
+import Profile from './pages/Profile';
+import ProfileDemo from './pages/ProfileDemo';
+import Matches from './pages/Matches';
 
 function Navigation(): JSX.Element {
   const { user, logout } = useAuth();
@@ -47,6 +50,37 @@ function Navigation(): JSX.Element {
             )}
           </div>
         </div>
+                <Link
+                  to="/profile"
+                  className="text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  Profile
+                </Link>
+                <Link
+                  to="/matches"
+                  className="text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  Matches
+                </Link>
+                <Link
+                  to="/demo"
+                  className="text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  Demo
+                </Link>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/matches" element={<Matches />} />
+            <Route path="/demo" element={<ProfileDemo />} />
+          </Routes>
+        </main>
       </div>
     </nav>
   );

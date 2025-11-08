@@ -875,6 +875,185 @@ Responses:
 
 ---
 
+### 11. Get Match Messages
+
+Retrieve the current conversation thread for a specific match. Messages are stored in-memory as a placeholder until the dedicated chat service is implemented. Data resets when the server restarts.
+
+```yaml
+GET /api/matches/{matchId}/messages
+Cookie: accessToken=eyJhbGc...
+Authorization: Bearer (implicit via cookie)
+
+Path Parameters:
+  matchId:
+    type: string
+    required: true
+    example: "cuid_match_123456"
+
+Responses:
+  200:
+    description: Conversation history for the match
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            messages:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "cuid_message_123456"
+                  matchId:
+                    type: string
+                    example: "cuid_match_123456"
+                  senderId:
+                    type: string
+                    example: "cuid_user_789012"
+                  content:
+                    type: string
+                    example: "Hey! Great to meet you."
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: "2024-01-16T16:30:00.000Z"
+
+  401:
+    description: Not authenticated
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Unauthorized"
+
+  403:
+    description: User is not part of this match
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Unauthorized to view this match"
+
+  404:
+    description: Match not found
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Match not found"
+```
+
+---
+
+### 12. Send Match Message
+
+Store a new placeholder message for a match conversation. Content is validated (1-1000 characters) and trimmed before storage.
+
+```yaml
+POST /api/matches/{matchId}/messages
+Content-Type: application/json
+Cookie: accessToken=eyJhbGc...
+Authorization: Bearer (implicit via cookie)
+
+Path Parameters:
+  matchId:
+    type: string
+    required: true
+    example: "cuid_match_123456"
+
+Request Body:
+  content:
+    type: string
+    minLength: 1
+    maxLength: 1000
+    example: "Hi there! Loved your travel photos."
+
+Responses:
+  201:
+    description: Message recorded successfully
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            message:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: "cuid_message_654321"
+                matchId:
+                  type: string
+                  example: "cuid_match_123456"
+                senderId:
+                  type: string
+                  example: "cuid_user_789012"
+                content:
+                  type: string
+                  example: "Hi there! Loved your travel photos."
+                createdAt:
+                  type: string
+                  format: date-time
+                  example: "2024-01-16T17:15:00.000Z"
+
+  400:
+    description: Validation error (empty content, message too long, or invalid payload)
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Message content cannot be empty"
+
+  401:
+    description: Not authenticated
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Unauthorized"
+
+  403:
+    description: User is not part of this match
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Unauthorized to view this match"
+
+  404:
+    description: Match not found
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Match not found"
+```
+
+---
+
 ## Swipe and Match Flow
 
 ### Daily Swipe Limit
