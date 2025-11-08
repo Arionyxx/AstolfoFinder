@@ -124,6 +124,22 @@ import NewPage from './pages/NewPage';
 <Route path="/new" element={<NewPage />} />
 ```
 
+## 💬 Matches & Messaging
+
+The `/matches` route introduces a responsive, accessible space for managing new connections:
+
+- Displays mutual matches with status badges (new, active today, quiet) and relative timestamps.
+- Selecting a match opens a starter conversation thread with optional profile photo context.
+- Messages are stored through a backend placeholder API and will reset when the server restarts—perfect for prototyping the chat experience before real-time support lands.
+- Toast notifications appear when a new match is created from the discovery feed, keeping users in the loop without interrupting their flow.
+
+### Future Enhancements
+
+Planned improvements for this area include:
+- Persisted messaging backed by the database or a dedicated chat service.
+- Real-time delivery via WebSockets or push notifications.
+- Message read receipts, typing indicators, and richer media sharing.
+
 ## 🔌 API Communication
 
 ### Fetching Data

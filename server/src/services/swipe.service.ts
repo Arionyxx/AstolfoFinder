@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import prisma from '../lib/prisma.js';
 
 export interface SwipeResult {
@@ -21,8 +22,66 @@ export interface MatchInfo {
   lastInteraction: string | null;
 }
 
+export interface MatchMessage {
+  id: string;
+  matchId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+}
+
+type StoredMatchMessage = {
+  id: string;
+  matchId: string;
+  senderId: string;
+  content: string;
+  createdAt: Date;
+};
+
 export class SwipeService {
   private static readonly DAILY_SWIPE_LIMIT = 100;
+  private static matchMessageStore: Map<string, StoredMatchMessage[]> = new Map();
+
+  private static ensureMessageStore(matchId: string): StoredMatchMessage[] {
+    if (!this.matchMessageStore.has(matchId)) {
+      this.matchMessageStore.set(matchId, []);
+    }
+
+    return this.matchMessageStore.get(matchId)!;
+  }
+
+  private static toMatchMessage(message: StoredMatchMessage): MatchMessage {
+    return {
+      id: message.id,
+      matchId: message.matchId,
+      senderId: message.senderId,
+      content: message.content,
+      createdAt: message.createdAt.toISOString(),
+    };
+  }
+
+  private static async assertMatchParticipant(matchId: string, userId: string) {
+    const match = await prisma.match.findUnique({
+      where: { id: matchId },
+    });
+
+    if (!match) {
+      throw new Error('Match not found');
+    }
+
+    if (match.user1Id !== userId && match.user2Id !== userId) {
+      throw new Error('Unauthorized to view this match');
+    }
+
+    return match;
+  }
+
+  /**
+   * Exposed for testing to ensure clean slate between suites
+   */
+  static clearMessageStore(): void {
+    this.matchMessageStore.clear();
+  }
 
   /**
    * Get today's date in UTC (without time component)
@@ -311,5 +370,48 @@ export class SwipeService {
       createdAt: match.createdAt.toISOString(),
       lastInteraction: match.lastInteraction?.toISOString() || null,
     };
+  }
+
+  static async getMatchMessages(matchId: string, userId: string): Promise<MatchMessage[]> {
+    const match = await this.assertMatchParticipant(matchId, userId);
+    const messages = this.ensureMessageStore(match.id);
+
+    return messages
+      .slice()
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .map(message => this.toMatchMessage(message));
+  }
+
+  static async addMatchMessage(matchId: string, senderId: string, content: string): Promise<MatchMessage> {
+    const trimmedContent = content.trim();
+
+    if (!trimmedContent) {
+      throw new Error('Message content cannot be empty');
+    }
+
+    if (trimmedContent.length > 1000) {
+      throw new Error('Message content must be 1000 characters or less');
+    }
+
+    const match = await this.assertMatchParticipant(matchId, senderId);
+    const createdAt = new Date();
+
+    const message: StoredMatchMessage = {
+      id: randomUUID(),
+      matchId: match.id,
+      senderId,
+      content: trimmedContent,
+      createdAt,
+    };
+
+    const messages = this.ensureMessageStore(match.id);
+    messages.push(message);
+
+    await prisma.match.update({
+      where: { id: match.id },
+      data: { lastInteraction: createdAt },
+    });
+
+    return this.toMatchMessage(message);
   }
 }
